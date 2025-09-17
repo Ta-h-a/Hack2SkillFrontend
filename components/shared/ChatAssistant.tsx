@@ -26,23 +26,35 @@ export default function ChatAssistant({ uid }: ChatAssistantProps) {
   };
 
   return (
-    <div className="fixed bottom-4 right-4 w-80 bg-white border rounded shadow-lg z-50">
-      <div className="p-2 border-b font-bold">Chat Assistant</div>
-      <div className="p-2 h-48 overflow-y-auto flex flex-col gap-2">
+    <div className="fixed bottom-6 right-6 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+      <div className="bg-blue-600 text-white p-3 rounded-t-lg font-medium">Chat Assistant</div>
+      <div className="p-3 h-64 overflow-y-auto bg-gray-50">
         {messages.map((msg, i) => (
-          <div key={i} className={msg.role === "user" ? "text-right" : "text-left text-blue-700"}>{msg.text}</div>
+          <div key={i} className={`mb-2 p-2 rounded max-w-[80%] ${
+            msg.role === "user" ? "bg-blue-100 text-blue-900 ml-auto" : "bg-white text-gray-800"
+          }`}>
+            {msg.text}
+          </div>
         ))}
-        {loading && <div className="text-gray-400">Assistant is typing...</div>}
+        {loading && (
+          <div className="text-gray-500 text-sm italic">Assistant is typing...</div>
+        )}
       </div>
-      <div className="flex border-t">
+      <div className="flex border-t bg-white rounded-b-lg">
         <input
-          className="flex-1 p-2 outline-none"
+          className="flex-1 p-3 outline-none rounded-bl-lg"
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={e => e.key === "Enter" && sendMessage()}
           placeholder="Ask about your document..."
         />
-        <button className="p-2 bg-blue-500 text-white" onClick={sendMessage} disabled={loading}>Send</button>
+        <button
+          className="p-3 bg-blue-600 text-white rounded-br-lg hover:bg-blue-700 disabled:opacity-50"
+          onClick={sendMessage}
+          disabled={loading}
+        >
+          Send
+        </button>
       </div>
     </div>
   );

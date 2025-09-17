@@ -24,16 +24,34 @@ export default function NegotiationHelper({ uid, clauseId }: NegotiationHelperPr
   };
 
   return (
-    <div className="mt-4">
-      <label className="mr-2">Tone:</label>
-      <select value={tone} onChange={e => setTone(e.target.value)} className="border rounded px-2 py-1">
-        <option value="friendly">Friendly</option>
-        <option value="firm">Firm</option>
-      </select>
-      <button className="ml-2 bg-blue-500 text-white px-3 py-1 rounded" onClick={handleNegotiate} disabled={loading}>
-        {loading ? "Negotiating..." : "Negotiate"}
-      </button>
-      {suggestion && <div className="mt-2 text-green-700">{suggestion}</div>}
+    <div className="mt-6 p-4 bg-gray-50 rounded-lg border">
+      <h3 className="text-md font-medium mb-3 text-gray-900">Negotiate Clause</h3>
+      <div className="space-y-3">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Tone</label>
+          <select
+            value={tone}
+            onChange={e => setTone(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="friendly">Friendly</option>
+            <option value="firm">Firm</option>
+          </select>
+        </div>
+        <button
+          className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+          onClick={handleNegotiate}
+          disabled={loading}
+        >
+          {loading ? "Negotiating..." : "Negotiate"}
+        </button>
+        {suggestion && (
+          <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-md">
+            <p className="text-green-800 font-medium">Suggestion:</p>
+            <p className="text-green-700 mt-1">{suggestion}</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

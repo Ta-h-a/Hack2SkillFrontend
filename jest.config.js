@@ -7,7 +7,13 @@ module.exports = {
     '^.+\\.(css|scss|sass)$': 'identity-obj-proxy',
   },
   transform: {
-    '^.+\\.(ts|tsx|js|jsx)$': 'babel-jest',
+    '^.+\\.(ts|tsx|js|jsx)$': ['babel-jest', {
+      presets: [
+        '@babel/preset-env',
+        '@babel/preset-react',
+        '@babel/preset-typescript',
+      ],
+    }],
   },
   testPathIgnorePatterns: ['/node_modules/', '/.next/'],
   collectCoverageFrom: [
