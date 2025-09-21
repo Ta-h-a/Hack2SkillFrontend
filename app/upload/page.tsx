@@ -6,6 +6,8 @@ import { UploadCloud, File, X, Loader, FileCheck, ShieldCheck, Eye, Zap } from '
 import { motion, AnimatePresence } from 'framer-motion';
 import { uploadDocument } from '@/lib/api';
 import { useRouter } from 'next/navigation';
+import Header from '@/components/landing/Header';
+import Footer from '@/components/landing/Footer';
 
 // --- FileUploadForm Component ---
 // This component now handles the full upload and configuration flow.
@@ -214,8 +216,10 @@ export default function UploadPage() {
   ];
 
   return (
+    <>
+    <Header />
     <main className="min-h-screen bg-slate-900 text-white overflow-hidden">
-      <div className="container mx-auto px-6 py-16 md:py-24">
+      <div className="container mx-auto px-6 py-20 md:py-28">
         <div className="max-w-5xl mx-auto">
           {/* Hero Section */}
           <div className="text-center mb-16">
@@ -281,6 +285,8 @@ export default function UploadPage() {
         </div>
       </div>
     </main>
+    <Footer />
+    </>
   );
 }
 

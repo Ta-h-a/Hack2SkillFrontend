@@ -11,6 +11,8 @@ import MissingClausesModal from "@/components/analysis/MissingClausesModal";
 import LegalAssistant from "@/components/shared/ChatAssistant";
 import Timeline from "@/components/shared/Timeline";
 import VideoModal from "@/components/analysis/VideoModal";
+import Header from "@/components/landing/Header";
+import Footer from "@/components/landing/Footer";
 
 // --- MAIN RESULT PAGE COMPONENT ---
 export default function ResultPage() {
@@ -161,6 +163,8 @@ export default function ResultPage() {
   );
 
   return (
+  <>
+    <Header />
     <div className="min-h-screen bg-slate-900 text-white">
       <header className="sticky top-0 z-40 bg-slate-900/70 backdrop-blur-lg border-b border-slate-800">
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
@@ -244,5 +248,7 @@ export default function ResultPage() {
       
       <LegalAssistant uid={uid} />
     </div>
+    <Footer />
+    </>
   );
 }
