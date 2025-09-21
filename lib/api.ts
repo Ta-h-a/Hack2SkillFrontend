@@ -145,7 +145,7 @@ export async function exportRedline(uid: string, options: { includeGhosts: boole
 // ... existing functions
 
 export const startVideoGen = async (prompt: string, uid: string) => {
-    const res = await fetch(`${API_BASE_URL}/videogen/start`, {
+    const res = await fetch(`${API_BASE}/videogen/start`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -159,7 +159,7 @@ export const startVideoGen = async (prompt: string, uid: string) => {
 };
 
 export const getVideoGenStatus = async (jobId: string) => {
-    const res = await fetch(`${API_BASE_URL}/videogen/status/${jobId}`);
+    const res = await fetch(`${API_BASE}/videogen/status/${jobId}`);
     if (!res.ok) {
         throw new Error("Failed to get video status");
     }
