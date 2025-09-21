@@ -1,12 +1,10 @@
 // Centralized API utility functions for LegalSimplifier
 import type { Document, Clause, Change } from './types';
 
-
 const API_BASE = 'http://localhost:8000/api/v1'; // Set to '' to use dummy data
 const USE_DUMMY = !API_BASE;
 
 export async function uploadDocument(formData: FormData): Promise<{ uid: string; status?: string; message?: string }> {
-
   const res = await fetch(`${API_BASE}/upload`, {
     method: 'POST',
     body: formData,
@@ -17,7 +15,6 @@ export async function uploadDocument(formData: FormData): Promise<{ uid: string;
 }
 
 export async function getResult(uid: string): Promise<any> {
-
   const res = await fetch(`${API_BASE}/result/${uid}`);
   if (!res.ok) throw new Error('Result fetch failed');
   return res.json();
@@ -34,10 +31,7 @@ export async function getClauseDetail(uid: string, clauseId: string): Promise<an
   return res.json();
 }
 
-
-
 export async function insertGhostClause(uid: string): Promise<any> {
-
   const res = await fetch(`${API_BASE}/insert-ghost`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -48,11 +42,11 @@ export async function insertGhostClause(uid: string): Promise<any> {
   throw new Error('API not available');
 }
 
-export async function negotiateClause(uid: string, clauseId: string, tone: string, origin:string,risk:string): Promise<{ rewritten_clause: string; risk_after: string ; ai_explanation: string}> {
+export async function negotiateClause(uid: string, clauseId: string, tone: string, origin: string, risk: string): Promise<{ rewritten_clause: string; risk_after: string; ai_explanation: string }> {
   const res = await fetch(`${API_BASE}/negotiate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ uid, clauseId, tone , origin ,risk}),
+    body: JSON.stringify({ uid, clauseId, tone, origin, risk }),
   });
   if (!res.ok) throw new Error('Negotiate failed');
   return res.json();
@@ -67,7 +61,6 @@ export async function chatWithAssistant(uid: string, question: string, session_i
   });
   if (!res.ok) throw new Error('Chat failed');
   return res.json();
-
   throw new Error('API not available');
 }
 
@@ -79,7 +72,6 @@ export async function getSessions(): Promise<{ sessions: any[] }> {
 }
 
 export async function getSessionHistory(sessionId: string): Promise<{ session_id: string; history: any[] }> {
-  
   const res = await fetch(`${API_BASE}/sessions/${sessionId}`);
   if (!res.ok) throw new Error('Session history fetch failed');
   return res.json();
@@ -96,7 +88,6 @@ export async function deleteSession(sessionId: string): Promise<void> {
   const res = await fetch(`${API_BASE}/sessions/${sessionId}`, {
     method: "DELETE",
   });
-
   if (!res.ok) {
     throw new Error(`Failed to delete session: ${res.statusText}`);
   }
@@ -142,26 +133,25 @@ export async function exportRedline(uid: string, options: { includeGhosts: boole
   throw new Error('API not available');
 }
 
-// ... existing functions
-
+// 📹 NEW VIDEO GENERATION FUNCTIONS
 export const startVideoGen = async (prompt: string, uid: string) => {
-    const res = await fetch(`${API_BASE}/videogen/start`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ prompt, uid }),
-    });
-    if (!res.ok) {
-        throw new Error("Failed to start video generation");
-    }
-    return res.json();
+  const res = await fetch(`${API_BASE}/videogen/start`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ prompt, uid }),
+  });
+  if (!res.ok) {
+    throw new Error("Failed to start video generation");
+  }
+  return res.json();
 };
 
 export const getVideoGenStatus = async (jobId: string) => {
-    const res = await fetch(`${API_BASE}/videogen/status/${jobId}`);
-    if (!res.ok) {
-        throw new Error("Failed to get video status");
-    }
-    return res.json();
+  const res = await fetch(`${API_BASE}/videogen/status/${jobId}`);
+  if (!res.ok) {
+    throw new Error("Failed to get video status");
+  }
+  return res.json();
 };
