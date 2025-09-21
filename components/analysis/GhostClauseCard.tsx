@@ -1,22 +1,62 @@
-import React from "react";
-import { Clause } from "@/lib/types";
+"use client";
 
+import React from "react";
+import { motion } from "framer-motion";
+import { PlusCircle, Ghost } from "lucide-react";
+import type { Clause } from "@/lib/types"; // Assuming this type is defined in your project
+
+// --- Component Props ---
 interface GhostClauseCardProps {
   clause: Clause;
   onAdd: (clauseType: string) => void;
+  isLoading?: boolean;
 }
 
-export default function GhostClauseCard({ clause, onAdd }: GhostClauseCardProps) {
+
+// --- The Enhanced GhostClauseCard Component ---
+
+export default function GhostClauseCard({ clause, onAdd, isLoading }: GhostClauseCardProps) {
   return (
-    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
-      <div className="font-medium mb-2 text-gray-700">Missing Clause</div>
-      <div className="text-sm text-gray-600 truncate mb-4">{clause.text}</div>
-      <button
-        className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
-        onClick={() => onAdd(clause.text)}
-      >
-        Add Standard Clause
-      </button>
-    </div>
+    <motion.div
+      className="relative w-full h-full rounded-2xl p-px"
+      style={{
+          background: "repeating-linear-gradient(45deg, #475569, #475569 5px, transparent 5px, transparent 10px)" // slate-600 dashed
+      }}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, delay: 0.1 }}
+    >
+      <div className="relative z-10 w-full h-full bg-slate-800/90 rounded-[15px] p-6 flex flex-col justify-between backdrop-blur-sm">
+        <div>
+            {/* Header */}
+            <div className="flex items-center gap-3 mb-3">
+              <div className="flex-shrink-0 text-purple-400">
+                <Ghost size={22} />
+              </div>
+              <h3 className="font-bold text-lg text-purple-300">Missing Clause Identified</h3>
+            </div>
+
+            {/* Content */}
+            <p className="font-semibold text-slate-100 mb-2">{clause.text}</p>
+            {clause.explanation && (
+              <p className="text-sm text-slate-400 leading-relaxed">
+                <span className="font-semibold text-slate-300">Reason: </span>{clause.explanation}
+              </p>
+            )}
+        </div>
+
+        {/* Action Button */}
+        <div className="mt-6">
+           <button
+            className="w-full flex items-center justify-center gap-2 bg-purple-600/80 text-white font-semibold rounded-xl px-4 py-2.5 transition-all duration-200 hover:bg-purple-600 hover:shadow-lg hover:shadow-purple-500/20 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-slate-900 disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={() => onAdd(clause.text)}
+            disabled={isLoading}
+           >
+            <PlusCircle size={18} />
+            {isLoading ? "Adding..." : "Add Standard Clause"}
+          </button>
+        </div>
+      </div>
+    </motion.div>
   );
 }

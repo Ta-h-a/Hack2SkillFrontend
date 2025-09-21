@@ -23,7 +23,7 @@ function DisplayCard({
       className={`relative flex h-40 w-[24rem] -skew-y-[8deg] select-none flex-col justify-between rounded-2xl border border-slate-700 bg-slate-800/50 backdrop-blur-md p-5 transition-all duration-700 hover:border-slate-500/80 hover:bg-slate-800/80 ${className}`}
     >
       <div className="flex items-center gap-3">
-        <span className="relative inline-block rounded-lg bg-blue-900/50 p-2 border border-blue-500/20">
+        <span className="relative inline-block rounded-xl bg-blue-900/50 p-2 border border-blue-500/20">
           {icon}
         </span>
         <p className="text-lg font-semibold text-blue-400">{title}</p>

@@ -92,7 +92,7 @@ export default function FileUploadForm() {
             
             {file ? (
               <div className="space-y-3">
-                <div className="w-12 h-12 mx-auto bg-emerald-100 rounded-lg flex items-center justify-center">
+                <div className="w-12 h-12 mx-auto bg-emerald-100 rounded-xl flex items-center justify-center">
                   <svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
@@ -111,7 +111,7 @@ export default function FileUploadForm() {
               </div>
             ) : (
               <div className="space-y-3">
-                <div className="w-12 h-12 mx-auto bg-slate-100 rounded-lg flex items-center justify-center">
+                <div className="w-12 h-12 mx-auto bg-slate-100 rounded-xl flex items-center justify-center">
                   <svg className="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                   </svg>
@@ -154,7 +154,7 @@ export default function FileUploadForm() {
           <div className="relative">
             <select
               id="doc-type"
-              className="w-full appearance-none border border-slate-300 rounded-lg px-4 py-3 pr-10 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-slate-500 bg-white text-slate-900"
+              className="w-full appearance-none border border-slate-300 rounded-xl px-4 py-3 pr-10 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-slate-500 bg-white text-slate-900"
               value={docType}
               onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setDocType(e.target.value)}
               aria-describedby="type-help"

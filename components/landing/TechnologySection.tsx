@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils"; // Assuming you have this utility function
 
 const transition = {
   duration: 0,
-  ease: "linear",
+  ease: "linear" as const,
 };
 
 const GoogleGeminiEffect = ({

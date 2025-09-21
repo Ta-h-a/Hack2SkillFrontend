@@ -10,7 +10,7 @@ export default function ExportControls({ onExport }: ExportControlsProps) {
   const [watermark, setWatermark] = useState("");
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-md border">
+    <div className="bg-white p-6 rounded-xl shadow-md border">
       <h3 className="text-lg font-medium mb-4 text-gray-900">Export Options</h3>
       <div className="space-y-4">
         <label className="flex items-center">
