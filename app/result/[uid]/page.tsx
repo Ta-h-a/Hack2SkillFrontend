@@ -95,7 +95,6 @@ export default function ResultPage() {
     // Handle other statuses like 'failed'
   }, [videoStatus]);
 
-
   const handleGhostAdd = async (clauseType: string) => {
     if (!uid) return;
     setGhostLoading(true);
