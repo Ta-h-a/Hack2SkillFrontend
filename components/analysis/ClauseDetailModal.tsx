@@ -47,7 +47,7 @@ interface ClauseDetailModalProps {
 
 // --- Main Modal Component ---
 export default function ClauseDetailModal({ clause, isLoading, onClose }: ClauseDetailModalProps) {
-  const [negotiation, setNegotiation] = useState<{ suggestion: string; newRisk: string } | null>(null);
+  const [negotiation, setNegotiation] = useState<{ rewritten_clause: string; risk_after: string; ai_explanation: string } | null>(null);
   const [isNegotiating, setIsNegotiating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -77,7 +77,7 @@ export default function ClauseDetailModal({ clause, isLoading, onClose }: Clause
     setIsNegotiating(true);
     setError(null);
     try {
-      const res = await negotiateClause(clause.documentId, clause.id, tone);
+      const res = await negotiateClause(clause.documentId, clause.id, tone, clause.text, clause.risk);
       setNegotiation(res);
     } catch (e) {
       setError("Negotiation failed. Please try again.");
@@ -86,7 +86,7 @@ export default function ClauseDetailModal({ clause, isLoading, onClose }: Clause
     }
   };
 
-  const currentRisk = negotiation?.newRisk || clause?.risk || 'default';
+  const currentRisk = clause?.risk || "default";
   const config = riskConfig[currentRisk as keyof typeof riskConfig] || riskConfig.default;
   const { Icon } = config;
 
@@ -149,16 +149,6 @@ export default function ClauseDetailModal({ clause, isLoading, onClose }: Clause
                                   <p className="text-slate-300 leading-relaxed">{clause.explanation}</p>
                               </DetailSection>
 
-                               {clause.alternatives?.length > 0 && (
-                                 <DetailSection title="Suggested Alternatives">
-                                     <ul className="space-y-3">
-                                         {clause.alternatives.map((alt, i) => (
-                                             <li key={i} className="p-3 bg-slate-800/50 border border-slate-700 rounded-xl text-sm text-slate-300">{alt}</li>
-                                         ))}
-                                     </ul>
-                                 </DetailSection>
-                               )}
-
                               {/* Negotiation Section */}
                               <DetailSection title="Negotiation AI">
                                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -183,7 +173,7 @@ export default function ClauseDetailModal({ clause, isLoading, onClose }: Clause
                                           <div className="font-medium text-blue-300 mb-2 flex items-center gap-2">
                                               <Bot className="w-5 h-5"/> AI Suggestion:
                                           </div>
-                                          <p className="text-slate-200">{negotiation.suggestion}</p>
+                                          <p className="text-slate-200">{negotiation.rewritten_clause}</p>
                                       </motion.div>
                                   )}
                                   </AnimatePresence>

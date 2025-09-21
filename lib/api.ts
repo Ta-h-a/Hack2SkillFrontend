@@ -48,11 +48,11 @@ export async function insertGhostClause(uid: string): Promise<any> {
   throw new Error('API not available');
 }
 
-export async function negotiateClause(uid: string, clauseId: string, tone: string): Promise<{ suggestion: string; newRisk: string }> {
+export async function negotiateClause(uid: string, clauseId: string, tone: string, origin:string,risk:string): Promise<{ rewritten_clause: string; risk_after: string ; ai_explanation: string}> {
   const res = await fetch(`${API_BASE}/negotiate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ uid, clauseId, tone }),
+    body: JSON.stringify({ uid, clauseId, tone , origin ,risk}),
   });
   if (!res.ok) throw new Error('Negotiate failed');
   return res.json();
