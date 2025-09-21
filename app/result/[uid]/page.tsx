@@ -4,7 +4,7 @@ import useSWR from "swr";
 import type { Clause } from "@/lib/types";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, AlertTriangle, Search } from 'lucide-react';
-import { getResult, getClauseDetails, insertGhostClause } from "@/lib/api";
+import { getResult, getClauseDetail, insertGhostClause } from "@/lib/api";
 import AnalysisDashboard from "@/components/analysis/AnalysisDashboard";
 import ClauseDetailModal from "@/components/analysis/ClauseDetailModal";
 import MissingClausesModal from "@/components/analysis/MissingClausesModal";
@@ -52,7 +52,7 @@ export default function ResultPage() {
     if (selectedClauseId && uid) {
       setModalLoading(true);
       setModalClause(null);
-      getClauseDetails(uid, selectedClauseId)
+      getClauseDetail(uid, selectedClauseId)
         .then((rawData) => {
           const transformedClause = {
             id: rawData.clause_id || selectedClauseId,

@@ -24,13 +24,17 @@ export async function getResult(uid: string): Promise<any> {
   throw new Error('API not available');
 }
 
-export async function getClauseDetails(uid: string, clauseId: string): Promise<any> {
-
-  const res = await fetch(`${API_BASE}/clause/${uid}/${clauseId}`);
-  if (!res.ok) throw new Error('Clause fetch failed');
+export async function getClauseDetail(uid: string, clauseId: string): Promise<any> {
+  const cleanId = clauseId.replace(".txt", "");
+  const res = await fetch(`${API_BASE}/clause/${uid}/${cleanId}`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!res.ok) throw new Error('Fetch clause detail failed');
   return res.json();
-  throw new Error('API not available');
 }
+
+
 
 export async function insertGhostClause(uid: string): Promise<any> {
 
@@ -68,12 +72,10 @@ export async function chatWithAssistant(uid: string, question: string, session_i
 }
 
 export async function getSessions(): Promise<{ sessions: any[] }> {
-  
   const res = await fetch(`${API_BASE}/sessions`);
   if (!res.ok) throw new Error('Sessions fetch failed');
-  return res.json();
-  
-  throw new Error('API not available');
+  const data = await res.json();
+  return { sessions: data.sessions || [] }; // fallback
 }
 
 export async function getSessionHistory(sessionId: string): Promise<{ session_id: string; history: any[] }> {
@@ -82,6 +84,22 @@ export async function getSessionHistory(sessionId: string): Promise<{ session_id
   if (!res.ok) throw new Error('Session history fetch failed');
   return res.json();
   throw new Error('API not available');
+}
+
+export async function getSession(sessionId: string): Promise<{ session_id: string; history: any[] }> {
+  const res = await fetch(`${API_BASE}/sessions/${sessionId}`);
+  if (!res.ok) throw new Error('Failed to fetch session');
+  return res.json();
+}
+
+export async function deleteSession(sessionId: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/sessions/${sessionId}`, {
+    method: "DELETE",
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to delete session: ${res.statusText}`);
+  }
 }
 
 export async function getTimeline(uid: string): Promise<any[]> {

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, CheckCircle2, AlertTriangle, AlertOctagon, Bot, BrainCircuit, Loader2, FileText } from "lucide-react";
 import type { Clause } from "@/lib/types";
-import { negotiateClause } from "@/lib/api"; // Assuming API function exists
+import { negotiateClause, getClauseDetail } from "@/lib/api";
 
 // --- Risk Configuration ---
 const riskConfig = {
@@ -47,13 +47,29 @@ interface ClauseDetailModalProps {
 
 // --- Main Modal Component ---
 export default function ClauseDetailModal({ clause, isLoading, onClose }: ClauseDetailModalProps) {
-  const [negotiation, setNegotiation] = useState<{ ai_response: string; risk_after: string } | null>(null);
+  const [negotiation, setNegotiation] = useState<{ suggestion: string; newRisk: string } | null>(null);
   const [isNegotiating, setIsNegotiating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!clause) return;
     setNegotiation(null);
     setError(null);
+
+    const fetchClauseDetail = async () => {
+      try {
+        const cleanId = String(clause.id).replace(".txt", "");
+        const data = await getClauseDetail(clause.documentId, cleanId);
+        // Update the clause object with the fetched data
+        clause.explanation = data.explanation || "No simplified explanation available.";
+        clause.alternatives = data.alternatives || [];
+      } catch (err) {
+        console.error("Failed to fetch clause details", err);
+        setError("Could not load detailed clause explanation.");
+      }
+    };
+
+    fetchClauseDetail();
   }, [clause]);
 
   const handleNegotiate = async (tone: "friendly" | "firm" | "aggressive") => {
@@ -70,7 +86,7 @@ export default function ClauseDetailModal({ clause, isLoading, onClose }: Clause
     }
   };
 
-  const currentRisk = negotiation?.risk_after || clause?.risk || 'default';
+  const currentRisk = negotiation?.newRisk || clause?.risk || 'default';
   const config = riskConfig[currentRisk as keyof typeof riskConfig] || riskConfig.default;
   const { Icon } = config;
 
@@ -167,7 +183,7 @@ export default function ClauseDetailModal({ clause, isLoading, onClose }: Clause
                                           <div className="font-medium text-blue-300 mb-2 flex items-center gap-2">
                                               <Bot className="w-5 h-5"/> AI Suggestion:
                                           </div>
-                                          <p className="text-slate-200">{negotiation.ai_response}</p>
+                                          <p className="text-slate-200">{negotiation.suggestion}</p>
                                       </motion.div>
                                   )}
                                   </AnimatePresence>

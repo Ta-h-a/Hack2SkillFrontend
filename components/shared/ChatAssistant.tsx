@@ -2,10 +2,11 @@
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Bot, X, Loader2, MessageSquare, Plus } from 'lucide-react';
+import { Send, Bot, X, Loader2, MessageSquare, Plus, MoreVertical, Trash2 } from 'lucide-react';
 import { cx } from "class-variance-authority";
 import { ChatLoader } from "@/components/ui/chat-loader";
-import { chatWithAssistant, getSessions, getSessionHistory } from '@/lib/api';
+import { chatWithAssistant, getSessions, getSessionHistory, getSession, deleteSession } from '@/lib/api';
+import ReactMarkdown from "react-markdown";
 // --- MOCK APIs & UTILS ---
 // const mockGetSessions = async (): Promise<{ sessions: { session_id: string, title: string, last_updated: string }[] }> => {
 //     await new Promise(res => setTimeout(res, 500));
@@ -40,9 +41,45 @@ const cn = (...inputs: any[]) => inputs.filter(Boolean).join(' ');
 const ChatMessage = ({ role, text }: { role: string, text: string }) => {
     const isUser = role === "user";
     return (
-        <motion.div layout initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: -10 }} transition={{ duration: 0.3, ease: "easeOut" }} className={`flex items-start gap-3 ${isUser ? 'justify-end' : ''}`}>
-            {!isUser && (<div className="w-8 h-8 flex-shrink-0 bg-slate-800 border border-slate-700/50 rounded-full flex items-center justify-center mt-1"><Bot className="w-5 h-5 text-blue-400" /></div>)}
-            <div className={`max-w-md px-4 py-3 rounded-2xl ${isUser ? 'bg-blue-600 text-white rounded-br-none' : 'bg-slate-800 text-slate-200 rounded-bl-none'}`}><p className="text-sm leading-relaxed whitespace-pre-wrap">{text}</p></div>
+        <motion.div
+            layout
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: -10 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            className={`flex items-start gap-3 ${isUser ? 'justify-end' : ''}`}
+        >
+            {!isUser && (
+                <div className="w-8 h-8 flex-shrink-0 bg-slate-800 border border-slate-700/50 rounded-full flex items-center justify-center mt-1">
+                    <Bot className="w-5 h-5 text-blue-400" />
+                </div>
+            )}
+            <div
+                className={`max-w-md px-4 py-3 rounded-2xl ${
+                    isUser
+                        ? 'bg-blue-600 text-white rounded-br-none'
+                        : 'bg-slate-800 text-slate-200 rounded-bl-none'
+                }`}
+            >
+                <ReactMarkdown
+  components={{
+    p: ({ children }) => <p>{children}</p>,
+    strong: ({ children }) => <strong>{children}</strong>,
+    em: ({ children }) => <em>{children}</em>,
+    ul: ({ children }) => <ul>{children}</ul>,
+    ol: ({ children }) => <ol>{children}</ol>,
+    li: ({ children }) => <li>{children}</li>,
+    h1: ({ children }) => <h1>{children}</h1>,
+    h2: ({ children }) => <h2>{children}</h2>,
+    h3: ({ children }) => <h3>{children}</h3>,
+    code: ({ children }) => <code>{children}</code>,
+    pre: ({ children }) => <pre>{children}</pre>,
+  }}
+>
+  {text}
+</ReactMarkdown>
+
+            </div>
         </motion.div>
     );
 };
@@ -75,7 +112,13 @@ const InputForm = React.forwardRef<HTMLTextAreaElement, { onSuccess: (value: str
   const { triggerClose, showForm } = useFormContext();
   const formRef = React.useRef<HTMLFormElement>(null);
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => { e.preventDefault(); const formData = new FormData(e.currentTarget); const message = formData.get("message") as string; if (message.trim()) { onSuccess(message); } };
-  const handleKeys = (e: React.KeyboardEvent<HTMLTextAreaElement>) => { if (e.key === "Escape") triggerClose(); if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); formRef.current?.requestSubmit(); } };
+  const handleKeys = (e: React.KeyboardEvent<HTMLTextAreaElement>) => { 
+    if (e.key === "Escape") triggerClose(); 
+    if (e.key === "Enter" && !e.shiftKey) { 
+      e.preventDefault(); 
+      formRef.current?.requestSubmit(); 
+    } 
+  };
   return (
 <form ref={formRef} onSubmit={handleSubmit} className="absolute bottom-0" style={{ width: FORM_WIDTH, height: FORM_HEIGHT, pointerEvents: showForm ? "all" : "none" }}>
   <AnimatePresence>
@@ -156,6 +199,37 @@ const AIInput = ({ onSend }: { onSend: (value: string) => void}) => {
     return(<div className="flex items-center justify-center w-full h-full"><FormContext.Provider value={ctx}><motion.div ref={wrapperRef} className="bg-slate-900/80 relative z-3 flex flex-col items-center overflow-hidden border border-slate-700" initial={false} animate={{ width: showForm ? FORM_WIDTH : "auto", height: showForm ? FORM_HEIGHT : 44, borderRadius: showForm ? 16 : 22 }} transition={{ type: "spring", stiffness: 450, damping: 40 }}><DockBar /><InputForm ref={textareaRef} onSuccess={handleSuccess} /></motion.div></FormContext.Provider></div>);
 };
 
+// --- Helper function for session title fallback logic ---
+const getSessionTitle = (session: any): string => {
+  // If session.title exists → use it
+  if (session?.title) {
+    return session.title;
+  }
+  
+  // Prefer session.firstMessage or session.history[0].content
+  const firstMessage = session?.firstMessage || 
+                      (session?.history?.[0]?.content ?? "");
+  
+  if (firstMessage) {
+    return firstMessage.length > 30 
+      ? `${firstMessage.substring(0, 30)}…` 
+      : firstMessage;
+  }
+  
+  // Else if session.session_id exists → show Session ${session.session_id.slice(0,6)}
+  if (session?.session_id) {
+    return `Session ${session.session_id.slice(0, 6)}`;
+  }
+  
+  // Else if session is a string (raw session ID) → show Session ${session.slice(0,6)}
+  if (typeof session === 'string') {
+    return `Session ${session.slice(0, 6)}`;
+  }
+  
+  // Final fallback → "New Session"
+  return "New Session";
+};
+
 // --- Main Chat Assistant Component ---
 interface ChatModalProps { uid: string; isOpen: boolean; onClose: () => void; }
 
@@ -163,38 +237,243 @@ const ChatModal = ({ uid, isOpen, onClose }: ChatModalProps) => {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<{ role: string; text: string }[]>([]);
   const [loading, setLoading] = useState(false);
-  const [sessions, setSessions] = useState<{ session_id: string, title: string, last_updated: string }[]>([]);
+  const [sessions, setSessions] = useState<{ session_id: string, title?: string, history?: any[], firstMessage?: string }[]>([]);
   const [selectedSessionId, setSelectedSessionId] = useState<string | undefined>(undefined);
+  const [sessionHistories, setSessionHistories] = useState<{ [key: string]: any }>({});
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ sessionId: string; sessionTitle: string } | null>(null);
+  
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => { if (isOpen) { getSessions().then(data => setSessions(data.sessions)); } }, [isOpen]);
-  useEffect(() => { if(selectedSessionId) { setMessages([]); getSessionHistory(selectedSessionId).then(data => setMessages(data.history.map((msg: any) => ({ role: msg.role, text: msg.content })))); } else { setMessages([]); } }, [selectedSessionId]);
+  useEffect(() => {
+    if (isOpen) {
+      getSessions()
+        .then(data => {
+          const sessionsData = data.sessions || [];
+          
+          // Handle both raw session IDs (strings) and session objects
+          const sessionObjects = sessionsData.map((session: any) => {
+            if (typeof session === 'string') {
+              // Raw session ID - convert to object format
+              return { session_id: session };
+            }
+            // Ensure we keep at least the first message if available
+            if (session.history && session.history.length > 0) {
+              session.firstMessage = session.history[0].content;
+            }
+            return session; // Already an object
+          });
+          
+          // Merge with existing sessions, preserving histories if already fetched
+          setSessions(prevSessions => {
+            const existingSessionsMap = new Map(prevSessions.map(s => [s.session_id, s]));
+            let newSessions = sessionObjects.map(session => {
+              const existing = existingSessionsMap.get(session.session_id);
+              const mergedSession = existing || session;
+              // Ensure firstMessage is set if history exists
+              if (mergedSession.history && mergedSession.history.length > 0 && !mergedSession.firstMessage) {
+                mergedSession.firstMessage = mergedSession.history[0].content;
+              }
+              return mergedSession;
+            });
+            
+            // Re-order so active session appears at the top
+            if (selectedSessionId) {
+              const activeSessionIndex = newSessions.findIndex(s => s.session_id === selectedSessionId);
+              if (activeSessionIndex > 0) {
+                const activeSession = newSessions.splice(activeSessionIndex, 1)[0];
+                newSessions.unshift(activeSession);
+              }
+            }
+            
+            return newSessions;
+          });
+        })
+        .catch(() => setSessions([]));
+    }
+  }, [isOpen]);
+  useEffect(() => { 
+    if(selectedSessionId) { 
+      setMessages([]); 
+      getSession(selectedSessionId)
+        .then(data => setMessages(data.history.map((msg: any) => ({ role: msg.role, text: msg.content }))))
+        .catch(() => setMessages([])); 
+    } else { 
+      setMessages([]); 
+    } 
+  }, [selectedSessionId]);
   useEffect(() => { if(scrollAreaRef.current) { scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight; } }, [messages, loading]);
 
-  const handleNewSession = () => setSelectedSessionId(undefined);
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (openDropdownId) {
+        // Check if the click is outside the dropdown
+        const target = event.target as Element;
+        const dropdown = document.querySelector(`[data-dropdown-id="${openDropdownId}"]`);
+        
+        if (dropdown && !dropdown.contains(target)) {
+          setOpenDropdownId(null);
+        }
+      }
+    };
+
+    if (openDropdownId) {
+      // Use a small delay to allow the dropdown to render first
+      setTimeout(() => {
+        document.addEventListener('click', handleClickOutside);
+      }, 100);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [openDropdownId]);
+
   const sendMessage = async (messageText = input) => {
     if (!messageText.trim() || loading) return;
-    setMessages(msgs => [...msgs, { role: "user", text: messageText }]); setLoading(true); setInput("");
+    
+    const userMessage = { role: "user", text: messageText };
+    setMessages(msgs => [...msgs, userMessage]);
+    setLoading(true);
+    setInput("");
+    
     try {
-      const res = await chatWithAssistant(uid, messageText, selectedSessionId);
-      setMessages(msgs => [...msgs, { role: "assistant", text: res.answer }]);
-      if (!selectedSessionId) { setSelectedSessionId(res.session_id); getSessions().then(data => setSessions(data.sessions)); }
-    } catch { setMessages(msgs => [...msgs, { role: "assistant", text: "Sorry, an error occurred." }]); } 
-    finally { setLoading(false); }
+      const res = await chatWithAssistant(uid, messageText, selectedSessionId || undefined);
+      const assistantMessage = { role: "assistant", text: res.answer };
+      setMessages(msgs => [...msgs, assistantMessage]);
+      
+      const newSessionId = res.session_id;
+      
+      // If this is a brand-new session (selectedSessionId was undefined)
+      if (!selectedSessionId) {
+        setSelectedSessionId(newSessionId);
+        
+        // Create new session object and add to top of sessions list
+        setSessions(prevSessions => {
+          const newSession = {
+            session_id: newSessionId,
+            firstMessage: messageText, // Store the first user message
+            history: [userMessage, assistantMessage]
+          };
+          return [newSession, ...prevSessions];
+        });
+      } else {
+        // Existing session - update it and move to top
+        setSessions(prevSessions => {
+          const updated = prevSessions.map(session => {
+            if (session.session_id === selectedSessionId) {
+              return {
+                ...session,
+                firstMessage: session.firstMessage || messageText, // Capture first message if missing
+                history: [...(session.history || []), userMessage, assistantMessage]
+              };
+            }
+            return session;
+          });
+          
+          // Move active session to top
+          const activeSession = updated.find(s => s.session_id === selectedSessionId);
+          const otherSessions = updated.filter(s => s.session_id !== selectedSessionId);
+          return activeSession ? [activeSession, ...otherSessions] : updated;
+        });
+      }
+    } catch (error) {
+      setMessages(msgs => [...msgs, { role: "assistant", text: "Sorry, an error occurred." }]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteSession = async (sessionId: string) => {
+    try {
+      await deleteSession(sessionId);
+      setSessions(prev => prev.filter(s => s.session_id !== sessionId));
+      
+      // If the deleted session is currently active, clear the chat
+      if (selectedSessionId === sessionId) {
+        setSelectedSessionId(undefined);
+        setMessages([]);
+      }
+    } catch (error) {
+      console.error("Failed to delete session", error);
+    }
   };
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-4" onClick={onClose}>
-          <motion.div initial={{ scale: 0.95, y: 20, opacity: 0 }} animate={{ scale: 1, y: 0, opacity: 1 }} exit={{ scale: 0.95, y: 20, opacity: 0 }} transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }} className="w-full h-full max-w-6xl max-h-[90vh] flex rounded-2xl bg-slate-900/80 border border-slate-700 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+    <>
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-4" onClick={onClose}>
+            <motion.div initial={{ scale: 0.95, y: 20, opacity: 0 }} animate={{ scale: 1, y: 0, opacity: 1 }} exit={{ scale: 0.95, y: 20, opacity: 0 }} transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }} className="w-full h-full max-w-6xl max-h-[90vh] flex rounded-2xl bg-slate-900/80 border border-slate-700 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            {/* Built-in Sessions Sidebar */}
             <div className="w-1/3 max-w-xs h-full flex flex-col border-r border-slate-800">
-                <div className="p-4 flex items-center justify-between border-b border-slate-800"><h2 className="font-bold text-white text-lg">Chat History</h2><button onClick={onClose} className="p-1.5 rounded-full text-slate-400 hover:bg-slate-700/50"><X size={18}/></button></div>
+                <div className="p-4 flex items-center justify-between border-b border-slate-800">
+                  <h2 className="font-bold text-white text-lg">Chat History</h2>
+                  <button onClick={onClose} className="p-1.5 rounded-full text-slate-400 hover:bg-slate-700/50">
+                    <X size={18}/>
+                  </button>
+                </div>
                 <div className="flex-grow p-2 space-y-1 overflow-y-auto">
-                    <button onClick={handleNewSession} className="w-full flex items-center gap-2 p-3 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-500"><Plus size={16}/> New Chat</button>
-                    {sessions.map(session => (<button key={session.session_id} onClick={() => setSelectedSessionId(session.session_id)} className={`w-full p-3 rounded-xl text-left text-sm ${selectedSessionId === session.session_id ? 'bg-slate-700/80' : 'hover:bg-slate-800/50'}`}><p className="font-medium text-slate-200 truncate">{session.title}</p><p className="text-xs text-slate-500 mt-1">{new Date(session.last_updated).toLocaleDateString()}</p></button>))}
+                    <button onClick={() => {
+                      setSelectedSessionId(undefined);
+                      setMessages([]);
+                    }} className="w-full flex items-center gap-2 p-3 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-500">
+                      <Plus size={16}/> New Chat
+                    </button>
+                    {sessions.length === 0 ? (
+                      <div className="text-slate-400 text-sm p-3">No sessions yet</div>
+                    ) : (
+                      sessions.map(session => (
+                        <div 
+                          key={session.session_id} 
+                          className={`flex items-center justify-between p-3 rounded-xl text-sm ${selectedSessionId === session.session_id ? 'bg-slate-700/80' : 'hover:bg-slate-800/50'}`}
+                        >
+                          {/* Session title - clickable */}
+                          <button
+                            onClick={() => setSelectedSessionId(session.session_id)}
+                            className="flex-1 text-left"
+                          >
+                            <p className="font-medium text-slate-200 truncate">
+                              {getSessionTitle(session)}
+                            </p>
+                          </button>
+                          
+                          {/* 3-dot menu */}
+                          <div className="ml-2 relative">
+                            <button 
+                              className="p-1 rounded hover:bg-slate-600 text-slate-400 hover:text-white"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setOpenDropdownId(openDropdownId === session.session_id ? null : session.session_id);
+                              }}
+                            >
+                              <MoreVertical size={16} />
+                            </button>
+                            {openDropdownId === session.session_id && (
+                              <div 
+                                className="absolute right-0 mt-1 bg-slate-700 border border-slate-600 rounded shadow-lg z-10 min-w-[120px]"
+                                data-dropdown-id={session.session_id}
+                              >
+                                <button
+                                  className="flex items-center px-3 py-2 text-sm hover:bg-slate-600 w-full text-slate-200 hover:text-white"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setOpenDropdownId(null);
+                                    setDeleteConfirm({
+                                      sessionId: session.session_id,
+                                      sessionTitle: getSessionTitle(session)
+                                    });
+                                  }}
+                                >
+                                  <Trash2 size={14} className="mr-2" /> Delete
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    )}
                 </div>
             </div>
             <div className="w-2/3 h-full flex flex-col bg-slate-800/30">
+                
                 {messages.length === 0 && !selectedSessionId && !loading ? ( 
                   <AIInput onSend={sendMessage} /> 
                 ) : messages.length === 0 && loading ? (
@@ -216,7 +495,73 @@ const ChatModal = ({ uid, isOpen, onClose }: ChatModalProps) => {
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+      </AnimatePresence>
+      
+      {/* Custom Delete Confirmation Modal - Outside main modal */}
+      <AnimatePresence>
+        {deleteConfirm && (
+          <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }} 
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
+            onClick={() => setDeleteConfirm(null)}
+          >
+            <motion.div 
+              initial={{ scale: 0.95, y: 20, opacity: 0 }} 
+              animate={{ scale: 1, y: 0, opacity: 1 }} 
+              exit={{ scale: 0.95, y: 20, opacity: 0 }} 
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="bg-slate-800 border border-slate-700 rounded-xl p-6 max-w-md w-full shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-red-500/20 rounded-full flex items-center justify-center">
+                  <Trash2 className="w-5 h-5 text-red-400" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-white">Delete Chat Session</h3>
+                  <p className="text-sm text-slate-400">This action cannot be undone</p>
+                </div>
+              </div>
+              
+              <div className="mb-6">
+                <p className="text-slate-300 mb-2">
+                  Are you sure you want to delete this chat session?
+                </p>
+                <div className="bg-slate-700/50 rounded-lg p-3 border border-slate-600">
+                  <p className="text-sm text-slate-400 mb-1">Session:</p>
+                  <p className="text-slate-200 font-medium truncate">
+                    {deleteConfirm.sessionTitle}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => setDeleteConfirm(null)}
+                  className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={async () => {
+                    if (deleteConfirm) {
+                      await handleDeleteSession(deleteConfirm.sessionId);
+                      setDeleteConfirm(null);
+                    }
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-500 rounded-lg transition-colors flex items-center gap-2"
+                >
+                  <Trash2 size={14} />
+                  Delete Session
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 }
 
