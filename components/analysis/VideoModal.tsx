@@ -15,7 +15,18 @@ interface VideoModalProps {
     onClose: () => void;
   }
 
-export default function VideoModal({ jobId, videoStatus, videoUrl, onClose }) {
+interface VideoModalProps {
+  jobId: string | null;
+  videoStatus: {
+    status: 'queued' | 'in_progress' | 'completed' | 'failed';
+    video_url?: string;
+    error?: string;
+  } | null;
+  videoUrl: string | null;
+  onClose: () => void;
+}
+
+export default function VideoModal({ jobId, videoStatus, videoUrl, onClose }: VideoModalProps) {
   const isGenerating = videoStatus?.status === 'in_progress' || videoStatus?.status === 'queued';
   const isCompleted = videoStatus?.status === 'completed';
   const isFailed = videoStatus?.status === 'failed';
