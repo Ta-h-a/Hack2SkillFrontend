@@ -59,9 +59,9 @@ export default function MissingClausesModal({ uid, isOpen, onClose }: MissingCla
   const handleAnalyze = async () => {
     setLoading(true);
     try {
-      // const result = await insertGhostClause(uid);
+      const result = await insertGhostClause(uid);
       await new Promise(res => setTimeout(res, 2000)); // Simulate API call
-      const result = { missing_clauses: [{clause_name: "Dispute Resolution", description: "Defines the process for resolving conflicts.", reason: "Without this, disagreements can lead to costly and lengthy court battles."}, {clause_name: "Confidentiality", description: "Protects sensitive information shared between parties.", reason: "Essential for safeguarding trade secrets and proprietary data."}] };
+      // const result = { missing_clauses: [{clause_name: "Dispute Resolution", description: "Defines the process for resolving conflicts.", reason: "Without this, disagreements can lead to costly and lengthy court battles."}, {clause_name: "Confidentiality", description: "Protects sensitive information shared between parties.", reason: "Essential for safeguarding trade secrets and proprietary data."}] };
       setMissingClauses(result.missing_clauses || []);
       setHasAnalyzed(true);
     } catch (error) {

@@ -5,34 +5,34 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Bot, X, Loader2, MessageSquare, Plus } from 'lucide-react';
 import { cx } from "class-variance-authority";
 import { ChatLoader } from "@/components/ui/chat-loader";
-
+import { chatWithAssistant, getSessions, getSessionHistory } from '@/lib/api';
 // --- MOCK APIs & UTILS ---
-const mockGetSessions = async (): Promise<{ sessions: { session_id: string, title: string, last_updated: string }[] }> => {
-    await new Promise(res => setTimeout(res, 500));
-    return {
-        sessions: [
-            { session_id: 'sid_123', title: 'NDA Analysis from yesterday', last_updated: new Date(Date.now() - 86400000).toISOString() },
-            { session_id: 'sid_456', title: 'Service Agreement Review', last_updated: new Date(Date.now() - 172800000).toISOString() },
-        ]
-    };
-};
-const mockGetSessionHistory = async (sessionId: string): Promise<{ history: { role: string, content: string }[] }> => {
-    await new Promise(res => setTimeout(res, 300));
-    return {
-        history: [
-            { role: 'user', content: 'What is the governing law?' },
-            { role: 'assistant', content: 'The governing law for this agreement is the State of Delaware.' }
-        ]
-    };
-};
-const mockChatWithAssistant = async (uid: string, question: string, sessionId?: string): Promise<{ answer: string, session_id: string }> => {
-    await new Promise(res => setTimeout(res, 1500));
-    const newSessionId = sessionId || `sid_${Date.now()}`;
-    return {
-        answer: `Regarding your question about "${question.substring(0, 20)}...", this is the AI's simulated response.`,
-        session_id: newSessionId,
-    };
-};
+// const mockGetSessions = async (): Promise<{ sessions: { session_id: string, title: string, last_updated: string }[] }> => {
+//     await new Promise(res => setTimeout(res, 500));
+//     return {
+//         sessions: [
+//             { session_id: 'sid_123', title: 'NDA Analysis from yesterday', last_updated: new Date(Date.now() - 86400000).toISOString() },
+//             { session_id: 'sid_456', title: 'Service Agreement Review', last_updated: new Date(Date.now() - 172800000).toISOString() },
+//         ]
+//     };
+// };
+// const mockGetSessionHistory = async (sessionId: string): Promise<{ history: { role: string, content: string }[] }> => {
+//     await new Promise(res => setTimeout(res, 300));
+//     return {
+//         history: [
+//             { role: 'user', content: 'What is the governing law?' },
+//             { role: 'assistant', content: 'The governing law for this agreement is the State of Delaware.' }
+//         ]
+//     };
+// };
+// const mockChatWithAssistant = async (uid: string, question: string, sessionId?: string): Promise<{ answer: string, session_id: string }> => {
+//     await new Promise(res => setTimeout(res, 1500));
+//     const newSessionId = sessionId || `sid_${Date.now()}`;
+//     return {
+//         answer: `Regarding your question about "${question.substring(0, 20)}...", this is the AI's simulated response.`,
+//         session_id: newSessionId,
+//     };
+// };
 const cn = (...inputs: any[]) => inputs.filter(Boolean).join(' ');
 
 
@@ -167,8 +167,8 @@ const ChatModal = ({ uid, isOpen, onClose }: ChatModalProps) => {
   const [selectedSessionId, setSelectedSessionId] = useState<string | undefined>(undefined);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => { if (isOpen) { mockGetSessions().then(data => setSessions(data.sessions)); } }, [isOpen]);
-  useEffect(() => { if(selectedSessionId) { setMessages([]); mockGetSessionHistory(selectedSessionId).then(data => setMessages(data.history.map((msg: any) => ({ role: msg.role, text: msg.content })))); } else { setMessages([]); } }, [selectedSessionId]);
+  useEffect(() => { if (isOpen) { getSessions().then(data => setSessions(data.sessions)); } }, [isOpen]);
+  useEffect(() => { if(selectedSessionId) { setMessages([]); getSessionHistory(selectedSessionId).then(data => setMessages(data.history.map((msg: any) => ({ role: msg.role, text: msg.content })))); } else { setMessages([]); } }, [selectedSessionId]);
   useEffect(() => { if(scrollAreaRef.current) { scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight; } }, [messages, loading]);
 
   const handleNewSession = () => setSelectedSessionId(undefined);
@@ -176,9 +176,9 @@ const ChatModal = ({ uid, isOpen, onClose }: ChatModalProps) => {
     if (!messageText.trim() || loading) return;
     setMessages(msgs => [...msgs, { role: "user", text: messageText }]); setLoading(true); setInput("");
     try {
-      const res = await mockChatWithAssistant(uid, messageText, selectedSessionId);
+      const res = await chatWithAssistant(uid, messageText, selectedSessionId);
       setMessages(msgs => [...msgs, { role: "assistant", text: res.answer }]);
-      if (!selectedSessionId) { setSelectedSessionId(res.session_id); mockGetSessions().then(data => setSessions(data.sessions)); }
+      if (!selectedSessionId) { setSelectedSessionId(res.session_id); getSessions().then(data => setSessions(data.sessions)); }
     } catch { setMessages(msgs => [...msgs, { role: "assistant", text: "Sorry, an error occurred." }]); } 
     finally { setLoading(false); }
   };
@@ -244,7 +244,7 @@ export default function LegalAssistant({ uid }: { uid: string }) {
 }
 
 // Add empty mock implementations for API functions to avoid errors
-const getSessions = async () => ({ sessions: [] as any[] });
-const getSessionHistory = async (sessionId: string) => ({ history: [] as any[] });
-const chatWithAssistant = async (uid: string, question: string, sessionId?: string) => ({ answer: '', session_id: '' });
+// const getSessions = async () => ({ sessions: [] as any[] });
+// const getSessionHistory = async (sessionId: string) => ({ history: [] as any[] });
+// const chatWithAssistant = async (uid: string, question: string, sessionId?: string) => ({ answer: '', session_id: '' });
 

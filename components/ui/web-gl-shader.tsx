@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef } from "react"
-import * as THREE from "three"
+import * as THREE from "@/node_modules/@types/three"
 
 export function WebGLShader() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
