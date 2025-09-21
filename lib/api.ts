@@ -141,3 +141,27 @@ export async function exportRedline(uid: string, options: { includeGhosts: boole
   */
   throw new Error('API not available');
 }
+
+// ... existing functions
+
+export const startVideoGen = async (prompt: string, uid: string) => {
+    const res = await fetch(`${API_BASE_URL}/videogen/start`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ prompt, uid }),
+    });
+    if (!res.ok) {
+        throw new Error("Failed to start video generation");
+    }
+    return res.json();
+};
+
+export const getVideoGenStatus = async (jobId: string) => {
+    const res = await fetch(`${API_BASE_URL}/videogen/status/${jobId}`);
+    if (!res.ok) {
+        throw new Error("Failed to get video status");
+    }
+    return res.json();
+};
