@@ -1,7 +1,7 @@
 // Centralized API utility functions for LegalSimplifier
 import type { Document, Clause, Change } from './types';
 
-const API_BASE = 'http://localhost:8000/api/v1'; // Set to '' to use dummy data
+const API_BASE = 'https://pkheria-BackendLegalDocument.hf.space/api/v1'; // Set to '' to use dummy data
 const USE_DUMMY = !API_BASE;
 
 export async function uploadDocument(formData: FormData): Promise<{ uid: string; status?: string; message?: string }> {
